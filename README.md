@@ -1,5 +1,5 @@
 # cian_prices
-learn and predict flat prices
+Prepare the data and make a model which can predict flat prices.
 
 The data were downloaded from cian.ru. It includes the prices of new buildings in Moscow and Moscow region.
 
