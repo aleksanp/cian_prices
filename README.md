@@ -23,7 +23,15 @@ One Hot Encoding and MinMax Scaler. Other methods such as Count encoding and Nor
 the best result: KNeighborsRegressor, Ridge, Lasso, LinearRegression, DecisionTreeRegressor, 
 GradientBoostingRegressor, RandomForestRegressor 
 
-![alt text](https://raw.githubusercontent.com/aleksanp/cian_prices/main/pictures/Random%20Forest%20Regressor.png) ![alt text](https://raw.githubusercontent.com/aleksanp/cian_prices/main/pictures/Linear.png)
-
 6. Tune the parameters of the best model RandomForestRegressor
+
+Valid set
+
+![alt VALID](https://raw.githubusercontent.com/aleksanp/cian_prices/main/pictures/Random%20Forest%20Regressor%20valid.png)
+
+Test set 
+
+![alt TEST](https://raw.githubusercontent.com/aleksanp/cian_prices/main/pictures/Random%20Forest%20Regressor%20test.png)
+
+
 
