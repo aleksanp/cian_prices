@@ -8,7 +8,7 @@ mode_type_house: 'Монолитный'
 sub_distance_left_border: 1400
 sub_distance_right_border: 4500
 start_date: '20190101'
-fit_time_to_sub_params:
+fit_distance_params:
   - 8.78223984e+06
   - 3.26351157e-03
   - 4.69136386e+06

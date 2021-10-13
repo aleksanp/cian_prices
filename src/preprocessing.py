@@ -3,6 +3,7 @@ import pandas as pd
 import random
 import os
 import sys
+import scipy
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from src.set_params import set_params
 
@@ -24,13 +25,13 @@ def calculate_distance_to_sub(row, human_speed=5, bus_speed=40):
             return row['Время'] * bus_speed
 
 
-def fit_time_to_sub(x, a, b, c):
+def fit_distance(x, a, b, c):
     """Аппроксимация вычисления стоимости от расстояния до метро"""
 
     return a * np.exp(-b * x) + c
 
 
-def fit_month_year(x, a, b):
+def fit_inflation(x, a, b):
     """Аппроксимация инфляции
     S[n] = a * ((1 + alpha)**n - 1) / (alpha)
     """
@@ -73,11 +74,6 @@ def load_data(params):
 
 def preprocessing(data, params, distance_params=None, inflation_params=None):
     """Функция для предподготовки данных"""
-
-    # if distance_params is None:
-    #     distance_params = params.distance_params
-    # if inflation_params is None:
-    #     inflation_params = params.inflation_params
 
     data = data.drop_duplicates()
     columns = [
@@ -142,7 +138,6 @@ def preprocessing(data, params, distance_params=None, inflation_params=None):
         lambda row: get_distance(row[0], row[1], lat_center, lng_center))
 
     # --- Расстояние до метро ---
-    # TODO вынести отдельно, запомнить для train и использовать для test
     X_sub_distance = X['Расстояние до метро'].str.split('.', expand=True)
     X_sub_distance_time = X_sub_distance[0].str.rstrip(' мин').astype(float)
     X_sub_distance_time.name = 'Время до метро'
@@ -158,14 +153,10 @@ def preprocessing(data, params, distance_params=None, inflation_params=None):
     right_border = params.sub_distance_right_border
     X['Расстояние до метро'] = X_sub_distance['Расстояние до метро'].map(
         lambda row: random.randint(left_border, right_border) if pd.isna(row) else row)
-    # X['Стоимость от расстояния'] = X['Расстояние до метро'].map(
-    #     lambda x, pars=distance_params: fit_time_to_sub(x, *pars))
 
-    # --- Инфляция ---
-    # TODO вынести отдельно, запомнить для train и использовать для test
+    # --- Количество дней для учёта инфляции ---
     start_date = params.start_date
     X['Дней'] = X['Дата обновления'].map(lambda x: diff_days(x, start_date))
-    # X['Стоимость с инфляцией'] = X['Дней'].map(lambda row: fit_month_year(row, *inflation_params))
 
     y = y[X.index]
 
@@ -182,6 +173,7 @@ def feature_encoding(features, encoder, x_train, x_test, x_valid=None,
         encoder.fit(x_train[features], y_train)
     else:
         encoder.fit(x_train[features])
+        
     # --- train ---
     cols_train = pd.DataFrame(encoder.transform(x_train[features]))
     cols_train.index = x_train[features].index
@@ -189,6 +181,7 @@ def feature_encoding(features, encoder, x_train, x_test, x_valid=None,
         cols_train.columns = [item for sublist in encoder.categories_ for item in sublist]
     else:
         cols_train.columns = x_train[features].columns
+        
     # --- test ---
     cols_test = pd.DataFrame(encoder.transform(x_test[features]))
     cols_test.index = x_test[features].index
@@ -196,6 +189,7 @@ def feature_encoding(features, encoder, x_train, x_test, x_valid=None,
         cols_test.columns = [item for sublist in encoder.categories_ for item in sublist]
     else:
         cols_test.columns = x_test[features].columns
+        
     # --- valid ---
     if not x_valid is None:
         cols_valid = pd.DataFrame(encoder.transform(x_valid[features]))
@@ -221,6 +215,62 @@ def all_features_encoding(x_train, x_test, x_valid, cat_features, num_features,
     x_valid = x_valid_num.join(x_valid_cat)
 
     return x_train, x_test, x_valid
+
+
+def get_fit_distance_params(x, y, p0):
+    """Вычислить параметры функции, аппроксимирующей стоимость от расстояния до метро"""
+
+    mask = ~x['Расстояние до метро'].isna()
+    pars, _ = scipy.optimize.curve_fit(
+        fit_distance, 
+        xdata=x.loc[mask, 'Расстояние до метро'],  
+        ydata=y[mask], 
+        p0=p0)
+    return pars
+
+
+def add_price_of_distance(x_train, y_train, x_test, p0):
+    """Добавить новый признак - функция стоимости от расстояния до метро"""
+    
+    distance_params = get_fit_distance_params(x_train, y_train, p0)
+    x_train_ = x_train.copy()
+    x_test_ = x_test.copy()
+    
+    x_train_['Стоимость от расстояния'] = x_train['Расстояние до метро'].map(
+        lambda x, pars=distance_params: fit_distance(x, *distance_params))
+    x_test_['Стоимость от расстояния'] = x_test['Расстояние до метро'].map(
+        lambda x, pars=distance_params: fit_distance(x, *distance_params))
+    
+    return x_train_, x_test_
+
+
+def get_fit_inflation_params(x, y, p0):
+    """Вычислить параметры функции, аппроксимирующей инфляцию"""
+        
+    mask = ~x['Дней'].isna()    
+    pars, _ = scipy.optimize.curve_fit(
+        fit_inflation, 
+        xdata=x.loc[mask, 'Дней'],  
+        ydata=y[mask], 
+        p0=p0)
+    
+    return pars
+
+
+def add_price_of_inflation(x_train, y_train, x_test, p0):
+    """Добавить новый признак - учёт инфляции"""
+    
+    inflation_params = get_fit_inflation_params(x_train, y_train, p0)
+    x_train_ = x_train.copy()
+    x_test_ = x_test.copy()
+    
+    x_train_['Стоимость с инфляцией'] = x_train['Дней'].map(
+        lambda row: fit_inflation(row, *inflation_params))
+    x_test_['Стоимость с инфляцией'] = x_test['Дней'].map(
+        lambda row: fit_inflation(row, *inflation_params))
+    
+    return x_train_, x_test_
+
 
 
 if __name__ == '__main__':
