@@ -6,8 +6,6 @@ The model was made to predict the housing prices based on the data from the real
 The missing values were filled in. Some new features were generated, including time to reach the subway, on foot or
 by public transport, time in months. 
 
-![alt text](https://raw.githubusercontent.com/aleksanp/cian_prices/main/pictures/Region%20copy.png)
-
 2. The geocoding was applied for the adressess. The multiprocessing library was applied to increase the speed. New feature distance was calculated from the latitude and the longitude.
 
 ![alt text](https://github.com/aleksanp/cian_prices/blob/main/data/pictures/map_2.png?raw=true)
@@ -23,13 +21,7 @@ GradientBoostingRegressor, RandomForestRegressor
 
 6. The parameters of the best model were tuned.
 
-Valid set
-
-![alt VALID](https://raw.githubusercontent.com/aleksanp/cian_prices/main/pictures/Random%20Forest%20Regressor%20valid.png)
-
-Test set 
-
-![alt TEST](https://raw.githubusercontent.com/aleksanp/cian_prices/main/pictures/Random%20Forest%20Regressor%20test.png)
+![alt VALID](https://github.com/aleksanp/cian_prices/blob/main/data/pictures/cian_results.PNG?raw=true)
 
 
 
