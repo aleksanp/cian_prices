@@ -10,7 +10,7 @@ by public transport, time in months.
 
 2. The geocoding was applied for the adressess. The multiprocessing library was applied to increase the speed. New feature distance was calculated from the latitude and the longitude.
 
-![alt text](https://raw.githubusercontent.com/aleksanp/cian_prices/main/pictures/location.png)
+![alt text](https://github.com/aleksanp/cian_prices/blob/main/data/pictures/map_2.png?raw=true)
 
 3. The data were splitted on test, valid and test sets. The features were encoded with Target Encoding, 
 One Hot Encoding and MinMax Scaler. Other methods such as Count encoding and Normalising didn't improve the result.
